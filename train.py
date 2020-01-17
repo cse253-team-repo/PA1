@@ -34,7 +34,7 @@ def train(args):
                 optimizer.update(classifier.Linear1, grad)
                 print("loss: ", loss)
                 break
-            
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', type=str, default="./aligned/")
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     parser.add_argument('--learning_rate', type=float, default=0.001)
     parser.add_argument('--k_cross_validation', type=int, default=10)
     parser.add_argument('--batch_size', type=int, default=2)
-    parser.add_argument('--num_pc', type=int, default=10)
+    parser.add_argument('--num_pc', type=int, default=40)
     parser.add_argument('--epoch', type=int, default=100)
     args = parser.parse_args()
     print(args)

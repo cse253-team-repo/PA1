@@ -79,7 +79,8 @@ def PCA(train_set=None, num_pc=1, sanity_check=True):
     print("variance_T shape: ", variance_T.shape)
     A_T = variance_T.reshape(num_faces,h*w)
     A = np.transpose(A_T,axes=(1,0))
-    covariance = np.matmul(A_T, A) / num_faces
+    A = A_T.T
+    covariance = np.dot(A_T, A) / num_faces
     eigenvalue, eigenvector = np.linalg.eig(covariance) # Eigen vectors are in column
     print("eigen value: ", eigenvalue[:10])
     eigenvalue_selected = eigenvalue[:num_pc]
