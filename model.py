@@ -13,9 +13,6 @@ class LR_Classifier():
         # print("predictions shape: ", predictions.shape)
         return self.outputs, self.predictions
 
-    def update(self, learning_rate=0.001):
-        self.Linear1 = self.Linear1 - learning_rate * self.grad
-
 
 
     
