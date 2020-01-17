@@ -1,33 +1,51 @@
 import numpy as np
 import random
+import argparse
+
 from dataloader import *
 from PCA import *
 from model import *
+from optimizer import *
+from loss import *
+
 
     
-def train(data_dir=None, classes=None, split_folder=None, return_folder=None, k_cross_validation=1, num_pc=10, batch_size=1):
-    folds = split_folder(data_dir, classes, k_cross_validation)
-    if len(classes) == 2:
-        classifier = LR_Classifier(num_pc)
+def train(args):
+    folds = split_folder(args.data_dir, args.classes, args.k_cross_validation)
+    optimizer = Optimizer(args.learning_rate)
+    if len(args.classes) == 2:
+        classifier = LR_Classifier(args.num_pc)
+        criterion = BinaryCrossEntropyLoss()
+
     else:
         classifier = None
-        
-    for fold in range(k):
-        train_loader, val_loader, test_loader = return_folder(classes=classes, folds=folds, fold=fold,
-                                                              k_cross_validation=k, num_pc=num_pc, 
-                                                              shuffle=True, batch_size=batch_size)
-        for i, (inputs, targets) in enumerate(train_loader):
-            # print("intpus shape: ", inputs.shape)
-            # print("targets shape: ", targets.shape)
-            outputs, predictions = classifier.forward(inputs)
-            classifier.backward(targets)
-            # print("outptushape: ", outputs.shape)
-            pass
+        criterion = None
 
+    for fold in range(args.k_cross_validation):
+        train_loader, val_loader, test_loader = return_folder(classes=args.classes, folds=folds, fold=fold,
+                                                              k_cross_validation=args.k_cross_validation, num_pc=args.num_pc, 
+                                                              shuffle=True, batch_size=args.batch_size)
+        
+        for epoch in range(args.epoch):
+            for i, (inputs, targets) in enumerate(train_loader):
+                outputs, predictions = classifier.forward(inputs)
+                loss = criterion.compute(outputs,targets)
+                grad = criterion.backward(inputs)
+                optimizer.update(classifier.Linear1, grad)
+                print("loss: ", loss)
+                break
+            
 if __name__ == '__main__':
-    data_dir = "./aligned/"
-    classes = ['happiness', 'anger']
-    batch_size = 2
-    k = 10
-    num_pc = 40
-    train(data_dir=data_dir, classes=classes, split_folder=split_folder, return_folder=return_folder, k_cross_validation=k, num_pc=num_pc, batch_size=batch_size)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data_dir', type=str, default="./aligned/")
+    parser.add_argument('--classes', type=list , default=['happiness', 'anger'])
+
+    # Hyperparameters
+    parser.add_argument('--learning_rate', type=float, default=0.001)
+    parser.add_argument('--k_cross_validation', type=int, default=10)
+    parser.add_argument('--batch_size', type=int, default=2)
+    parser.add_argument('--num_pc', type=int, default=10)
+    parser.add_argument('--epoch', type=int, default=100)
+    args = parser.parse_args()
+    print(args)
+    train(args)
