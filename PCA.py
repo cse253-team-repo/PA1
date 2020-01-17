@@ -248,13 +248,13 @@ def return_folder(classes=None, folds=None, fold=0, k_cross_validation=1, num_pc
 
     for c in classes:
         for i in range(train_num):
-            train_loader.append((train_set[c][i], classes_hash[c]))
+            train_loader.append((np.array(list(train_set[c][i])+[1]), classes_hash[c]))
         
         for i in range(val_num):
-            val_loader.append((val_set[c][i], classes_hash[c]))
+            val_loader.append((np.array(list(val_set[c][i])+[1]), classes_hash[c]))
 
         for i in range(test_num):
-            test_loader.append((test_set[c][i], classes_hash[c]))
+            test_loader.append((np.array(list(test_set[c][i])+[1]), classes_hash[c]))
     
     if shuffle == True:
         train_loader, val_loader, test_loader = random.sample(train_loader,num_classes*train_num), random.sample(val_loader, num_classes*val_num), random.sample(test_loader,num_classes*test_num)

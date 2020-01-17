@@ -17,11 +17,11 @@ def train(data_dir=None, classes=None, split_folder=None, return_folder=None, k_
                                                               k_cross_validation=k, num_pc=num_pc, 
                                                               shuffle=True, batch_size=batch_size)
         for i, (inputs, targets) in enumerate(train_loader):
-            print("intpus shape: ", inputs.shape)
-            print("targets shape: ", targets.shape)
-            outputs = classifier.forward(inputs)
-            classifier.backward(inputs,outputs,targets)
-            print("outptushape: ", outputs.shape)
+            # print("intpus shape: ", inputs.shape)
+            # print("targets shape: ", targets.shape)
+            outputs, predictions = classifier.forward(inputs)
+            classifier.backward(targets)
+            # print("outptushape: ", outputs.shape)
             pass
 
 if __name__ == '__main__':
