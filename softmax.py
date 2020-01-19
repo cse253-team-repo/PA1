@@ -15,16 +15,12 @@ class SoftmaxRegression:
 
         self.weights = np.random.rand(self.classes, n_features)
         self.bias = np.zeros((1, self.classes))
-        all_losses = []
 
         for i in range(iterations):
             scores = self.compute_scores(X)
             probs = self.softmax(scores)
             y_predict = np.argmax(probs, axis=1)[:, np.newaxis]
-            y_one_hot = self.one_hot(y_true)
-
-            loss = self.cross_entropy(y_one_hot, probs)
-            all_losses.append(loss)
+            y_one_hot = self.one_hot(y)
 
             dw = (1 / self.n_samples) * np.dot(X.T, (probs - y_one_hot))
             db = (1 / self.n_samples) * np.sum(probs - y_one_hot, axis=0)
@@ -33,37 +29,41 @@ class SoftmaxRegression:
             self.bias = self.bias - learning_rate * db
 
             if i % 100 == 0:
-                print(f'Iteration number: {i}, loss: {np.round(loss, 4)}')
+                print('Iteration:', i)
 
-        return self.weights, self.bias, all_losses
+        return self.weights, self.bias
 
     def train_stochastic(self, X, y, classes, iterations=100, learning_rate=0.1):
-        self.n_samples, n_features = X.shape
+        self.n_samples, self.n_features = X.shape
         self.classes = classes
 
-        self.weights = np.random.rand(self.classes, n_features)
+        self.weights = np.random.rand(self.classes, self.n_features)
         self.bias = np.zeros((1, self.classes))
-        all_losses = []
 
         for i in range(iterations):
             scores = self.compute_scores(X)
             probs = self.softmax(scores)
             y_predict = np.argmax(probs, axis=1)[:, np.newaxis]
-            y_one_hot = self.one_hot(y_true)
+            y_one_hot = self.one_hot(y)
 
-            loss = self.cross_entropy(y_one_hot, probs)
-            all_losses.append(loss)
+            rand1 = np.random.randint(0, self.n_samples, 1)
+            h = np.dot(self.weights, X[rand1].T)
+            print(X[rand1, 0])
+            for i in range(self.n_features):
+                self.weights[:, i] = self.weights[:, i] - \
+                    (1 / self.n_samples) * learning_rate * \
+                    (h - y[rand1]).T * X[rand1, i]
 
-            dw = (1 / self.n_samples) * np.dot(X.T, (probs - y_one_hot))
+            #dw = (1 / self.n_samples) * np.dot(X.T, (probs - y_one_hot))
             db = (1 / self.n_samples) * np.sum(probs - y_one_hot, axis=0)
 
-            self.weights = self.weights - learning_rate * dw.T
+            #self.weights = self.weights - learning_rate * dw.T
             self.bias = self.bias - learning_rate * db
 
             if i % 100 == 0:
-                print(f'Iteration number: {i}, loss: {np.round(loss, 4)}')
+                print('Iteration:', i)
 
-        return self.weights, self.bias, all_losses
+        return self.weights, self.bias
 
     def predict(self, X):
         scores = self.compute_scores(X)
@@ -80,8 +80,8 @@ class SoftmaxRegression:
     def compute_scores(self, X):
         return np.dot(X, self.weights.T) + self.bias
 
-    def cross_entropy(self, y_true, scores):
-        loss = - (1 / self.n_samples) * np.sum(y_true * np.log(scores))
+    def cross_entropy(self, y, scores):
+        loss = - (1 / self.n_samples) * np.sum(y * np.log(scores))
         return loss
 
     def one_hot(self, y):
@@ -95,13 +95,9 @@ y_true = y_true[:, np.newaxis]
 X_train, y_train = X, y_true
 
 regressor = SoftmaxRegression()
-w_trained, b_trained, loss = regressor.train_batch(
+w_trained, b_trained = regressor.train_stochastic(
     X_train, y_train, learning_rate=0.1, iterations=800, classes=4)
 
 
 print('Training Data Structure:', X_train[0])
 print('Training Label Structure:', y_train[0])
-print('Training Label Structure:', y_train[1])
-print('Training Label Structure:', y_train[2])
-print('Training Label Structure:', y_train[3])
-print('Training Label Structure:', y_train[4])
