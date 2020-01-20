@@ -94,7 +94,7 @@ def cross_fold(X, fold_num=2):
 def PCA(X, pc_num=1):
     average_data = np.mean(X, axis=0)
     centered_data = X - average_data
-
+    
     A_T = centered_data
     A = A_T.T
     eigenvalues, eigenvectors = np.linalg.eig(
@@ -109,6 +109,7 @@ def PCA(X, pc_num=1):
     projector = np.matrix(projector).T
 
     X_PCA = np.dot(X - average_data, projector[:, 0:pc_num])
+    
     return X_PCA, average_data, projector
 
 
@@ -143,6 +144,17 @@ for k in images.keys():
     y = y + [emotion_num] * len(images[k])
     emotion_num += 1
 
+<<<<<<< HEAD
+=======
+X = np.matrix(X)
+y = np.matrix(y).T
+
+X_PCA, average_data, projector = PCA(X, pc_num=40)
+
+softmax = SoftmaxRegression()
+w_trained, b_trained = softmax.train_batch(
+    X_PCA, y, classes=6, iterations=800, learning_rate=0.1)
+>>>>>>> 9bc113979750a48bfb0c9c169ee59f79311096fc
 
 shuffle_order = np.arange(len(X))
 np.random.shuffle(shuffle_order)
