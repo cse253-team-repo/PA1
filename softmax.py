@@ -40,18 +40,17 @@ class SoftmaxRegression:
             np.random.shuffle(random_order)
 
             for j in range(len(random_order)):
-                scores = np.dot(X, self.theta.T) + self.bias
-                probs = self.softmax(scores)
+                rand = random_order[j]
+                score = np.dot(X[rand], self.theta.T) + self.bias
+                prob = self.softmax(score)
                 y_one_hot = self.one_hot(y)
 
-                rand = random_order[j]
-                h = np.dot(self.theta, X[rand].T)
                 dw = (1 / self.n_samples) * \
-                    np.outer(h.T - y_one_hot[rand], X[rand])
+                    np.outer(prob - y_one_hot[rand], X[rand])
                 self.theta = self.theta - learning_rate * dw
 
                 db = (1 / self.n_samples) * \
-                    np.sum(probs - y_one_hot, axis=0)
+                    np.sum(prob - y_one_hot[rand])
                 self.bias = self.bias - learning_rate * db
 
         return self.theta, self.bias
@@ -170,7 +169,7 @@ for fold in range(num_folds):
     X_val_PCA = PCA_project(X_val, average_data, projector, pc_num=40)
 
     softmax = SoftmaxRegression()
-    w_trained, b_trained = softmax.train_batch(
+    w_trained, b_trained = softmax.train_stochastic(
         X_train_PCA, y_train, classes=6, epoch=100, learning_rate=1)
 
     y_train_predict = softmax.predict(X_train_PCA)
