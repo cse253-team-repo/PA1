@@ -3,42 +3,39 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-class SoftmaxRegression:
+class LogisticRegression:
 
     def __init__(self):
         pass
 
-    def train_batch(self, X, y, classes, epoch=100, learning_rate=0.01):
+    def train_batch(self, X, y, epoch=100, learning_rate=0.1, threshold=0.5):
         self.n_samples, self.n_features = X.shape
-        self.classes = classes
+        self.threshold = threshold
         self.loss = []
 
-        self.theta = np.random.rand(self.classes, self.n_features)
-        self.bias = np.zeros((1, self.classes))
-        y_one_hot = self.one_hot(y)
+        self.theta = np.random.rand(self.n_features)
+        self.bias = 0
 
         for i in range(epoch):
-            probs = self.softmax(X)
-            y_predict = np.argmax(probs, axis=1)[:, np.newaxis]
+            probs = self.sigmoid(X)
 
-            dw = (1 / self.n_samples) * np.dot(X.T, (probs - y_one_hot))
+            dw = (1 / self.n_samples) * np.dot(X.T, (probs - y))
             self.theta = self.theta - learning_rate * dw.T
 
-            db = (1 / self.n_samples) * np.sum(probs - y_one_hot, axis=0)
+            db = (1 / self.n_samples) * np.sum(probs - y, axis=0)
             self.bias = self.bias - learning_rate * db
 
-            self.loss.append(self.cross_entropy(X, y_one_hot))
+            #self.loss.append(self.cross_entropy(X, y_one_hot))
 
         return self.theta, self.bias, self.loss
 
-    def train_stochastic(self, X, y, classes, epoch=100, learning_rate=0.01):
+    def train_stochastic(self, X, y, epoch=100, learning_rate=0.1, threshold=0.5):
         self.n_samples, self.n_features = X.shape
-        self.classes = classes
+        self.threshold = threshold
         self.loss = []
 
-        self.theta = np.random.rand(self.classes, self.n_features)
-        self.bias = np.zeros((1, self.classes))
-        y_one_hot = self.one_hot(y)
+        self.theta = np.random.rand(self.n_features, 1)
+        self.bias = 0
 
         for i in range(epoch):
             random_order = np.arange(self.n_samples)
@@ -46,38 +43,32 @@ class SoftmaxRegression:
 
             for j in range(len(random_order)):
                 rand = random_order[j]
-                prob = self.softmax(X[rand])
+                prob = self.sigmoid(X[rand])
 
                 dw = (1 / self.n_samples) * \
-                    np.outer(prob - y_one_hot[rand], X[rand])
+                    np.outer(prob - y[rand], X[rand])
                 self.theta = self.theta - learning_rate * dw
 
                 db = (1 / self.n_samples) * \
-                    np.sum(prob - y_one_hot[rand])
+                    np.sum(prob - y[rand])
                 self.bias = self.bias - learning_rate * db
 
-            self.loss.append(self.cross_entropy(X, y_one_hot))
+            #self.loss.append(self.cross_entropy(X, y_one_hot))
 
         return self.theta, self.bias, self.loss
 
-    def one_hot(self, y):
-        one_hot = np.zeros((self.n_samples, self.classes))
-        one_hot[np.arange(self.n_samples), y.T] = 1
-        return one_hot
-
-    def softmax(self, X):
-        values = np.dot(X, self.theta.T) + self.bias
+    def sigmoid(self, X):
+        values = X * self.theta.reshape((self.n_features, 1)) + self.bias
         shifted_values = values - np.max(values)
-        exp_values = np.exp(shifted_values)
-        return exp_values / np.sum(exp_values)
+        return 1 / (1 + np.exp(-shifted_values))
 
     def cross_entropy(self, X, y_one_hot):
-        ce = - np.sum(np.multiply(y_one_hot, np.log(self.softmax(X))))
+        ce = - np.sum(np.multiply(y_one_hot, np.log(self.sigmoid(X))))
         return ce
 
     def predict(self, X):
-        probs = self.softmax(X)
-        return np.argmax(probs, axis=1)[:, np.newaxis]
+        probs = self.sigmoid(X)
+        return 1 * (probs >= self.threshold)
 
 
 def cross_fold(X, fold_num):
@@ -120,6 +111,9 @@ def PCA_project(X, average_data, projector, pc_num=1):
 
 
 def get_accuracy(y_predict, y_true):
+    if len(y_predict) != len(y_true):
+        return 0
+
     match = 0
     for i in range(len(y_predict)):
         if y_predict[i] == y_true[i]:
@@ -129,8 +123,7 @@ def get_accuracy(y_predict, y_true):
 
 data_dir = "./aligned/"
 dataset, cnt = load_data(data_dir)
-images = balanced_sampler(dataset, cnt, emotions=[
-    'anger', 'disgust', 'fear', 'happiness', 'sadness', 'surprise'])
+images = balanced_sampler(dataset, cnt, emotions=['anger', 'disgust'])
 
 emotion_num = 0
 X = []
@@ -140,12 +133,10 @@ for k in images.keys():
     y = y + [emotion_num] * len(images[k])
     emotion_num += 1
 
-
 shuffle_order = np.arange(len(X))
 np.random.shuffle(shuffle_order)
 X = np.matrix(X)[shuffle_order]
 y = np.matrix(y).T[shuffle_order]
-
 
 losses = []
 num_folds = 10
@@ -167,13 +158,13 @@ for fold in range(num_folds):
     X_test_PCA = PCA_project(X_test, average_data, projector, pc_num=40)
     X_val_PCA = PCA_project(X_val, average_data, projector, pc_num=40)
 
-    softmax = SoftmaxRegression()
-    theta, bias, loss = softmax.train_stochastic(
-        X_train_PCA, y_train, classes=6, epoch=50, learning_rate=0.1)
+    logistic = LogisticRegression()
+    theta, bias, loss = logistic.train_batch(
+        X_train_PCA, y_train, epoch=50, learning_rate=0.1)
 
-    y_train_predict = softmax.predict(X_train_PCA)
-    y_test_predict = softmax.predict(X_test_PCA)
-    y_val_predict = softmax.predict(X_val_PCA)
+    y_train_predict = logistic.predict(X_train_PCA)
+    y_test_predict = logistic.predict(X_test_PCA)
+    y_val_predict = logistic.predict(X_val_PCA)
     print('Training Accuracy:', get_accuracy(y_train_predict.A1, y_train.A1))
     print('Testing Accuracy:', get_accuracy(y_test_predict.A1, y_test.A1))
     print('Validation Accuracy:', get_accuracy(y_val_predict.A1, y_val.A1))
@@ -188,5 +179,5 @@ for loss in losses:
 average_losses = np.array(average_losses) / len(losses)
 print(average_losses)
 
-plt.plot(list(range(len(average_losses))), average_losses)
-plt.show()
+# plt.plot(list(range(len(average_losses))), average_losses)
+# plt.show()
