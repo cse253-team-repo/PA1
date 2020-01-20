@@ -87,7 +87,7 @@ class SoftmaxRegression:
 def PCA(X, pc_num=1):
     average_data = np.mean(X, axis=0)
     centered_data = X - average_data
-
+    
     A_T = centered_data
     A = A_T.T
     eigenvalues, eigenvectors = np.linalg.eig(
@@ -102,6 +102,7 @@ def PCA(X, pc_num=1):
     projector = np.matrix(projector).T
 
     X_PCA = np.dot(X - average_data, projector[:, 0:pc_num])
+    
     return X_PCA, average_data, projector
 
 
@@ -139,7 +140,7 @@ for k in images.keys():
 X = np.matrix(X)
 y = np.matrix(y).T
 
-X_PCA, average_data, projector = PCA(X, pc_num=15)
+X_PCA, average_data, projector = PCA(X, pc_num=40)
 
 softmax = SoftmaxRegression()
 w_trained, b_trained = softmax.train_batch(

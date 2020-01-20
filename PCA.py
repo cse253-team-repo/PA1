@@ -69,24 +69,27 @@ def PCA(train_set=None, num_pc=1, sanity_check=True):
     classes = list(train_set.keys())
     all_face = []
     for c in classes:
+        # print("mmp: ", train_set[c].shape)
         all_face += list(train_set[c])
     
-    all_face = np.array(all_face)
+    all_face = np.array(all_face, dtype=int)
     num_faces,h,w = all_face.shape[0], all_face.shape[-2], all_face.shape[-1]
 
     mean_face = np.mean(all_face, axis=0)
     variance_T = all_face - mean_face
-    print("variance_T shape: ", variance_T.shape)
-    A_T = variance_T.reshape(num_faces,h*w)
+    A_T = variance_T.reshape(num_faces,-1)
+    # print("A_T shape: ", A_T)
     A = np.transpose(A_T,axes=(1,0))
     A = A_T.T
     covariance = np.dot(A_T, A) / num_faces
-    eigenvalue, eigenvector = np.linalg.eig(covariance) # Eigen vectors are in column
-    print("eigen value: ", eigenvalue[:10])
+    eigenvalue, eigenvector = np.linalg.eig(np.dot(A_T, A) / num_faces) # Eigen vectors are in column
+    eigenvalue = np.abs(np.real(eigenvalue))
+    eigenvector = np.real(eigenvector)
+    # print("eigen value: ", eigenvalue[40])
     eigenvalue_selected = eigenvalue[:num_pc]
     eigenvector_selected = eigenvector[:,:num_pc]
-    print("num pc: ", num_pc)
-    print("A: ", A.shape)
+    # print("num pc: ", num_pc)
+    # print("A: ", A.shape)
 
     # sanity check
     # step 1: 
@@ -103,7 +106,7 @@ def PCA(train_set=None, num_pc=1, sanity_check=True):
             print("Pass sanity check? ", (mean_1 < 1e-6)&(mean_2 <1e-6)&(np.abs(std_2-1)<1e-6)&(np.abs(std_1-eigenvalue[i]**0.5)<1e-6))
     
     projector = np.dot(A, eigenvector_selected) / np.linalg.norm(np.dot(A, eigenvector_selected))
-    print("projector shape: ", projector.shape)
+    # print("projector shape: ", projector.shape)
     return mean_face, eigenvalue_selected, projector
 
 def PCA_project(mean_face=None, train_set=None, val_set=None, test_set=None, eigenvalue_selected=None, projector=None):

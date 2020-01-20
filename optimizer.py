@@ -6,5 +6,7 @@ class Optimizer():
     
     def update(self, model_para=None, grad=None):
         model_para -= self.learning_rate * grad
+        return model_para
+
         
         
