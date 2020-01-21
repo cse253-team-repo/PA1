@@ -1,8 +1,7 @@
 from dataloader import *
 import numpy as np
 import matplotlib.pyplot as plt
-
-
+import collections
 class SoftmaxRegression:
 
     def __init__(self):
@@ -52,6 +51,12 @@ class SoftmaxRegression:
             random_order = np.arange(self.n_samples)
             np.random.shuffle(random_order)
 
+            self.loss_train.append(self.cross_entropy(X, y_one_hot))
+            self.loss_test.append(self.cross_entropy(
+                X_test, self.one_hot(y_test)))
+            self.loss_val.append(self.cross_entropy(
+                X_val, self.one_hot(y_val)))
+                
             for j in range(len(random_order)):
                 rand = random_order[j]
                 prob = self.softmax(X[rand])
@@ -64,11 +69,11 @@ class SoftmaxRegression:
                     np.sum(prob - y_one_hot[rand])
                 self.bias = self.bias - learning_rate * db
 
-            self.loss_train.append(self.cross_entropy(X, y_one_hot))
-            self.loss_test.append(self.cross_entropy(
-                X_test, self.one_hot(y_test)))
-            self.loss_val.append(self.cross_entropy(
-                X_val, self.one_hot(y_val)))
+            # self.loss_train.append(self.cross_entropy(X, y_one_hot))
+            # self.loss_test.append(self.cross_entropy(
+            #     X_test, self.one_hot(y_test)))
+            # self.loss_val.append(self.cross_entropy(
+            #     X_val, self.one_hot(y_val)))
 
         return self.theta, self.bias, self.loss_train, self.loss_test, self.loss_val
 
@@ -84,8 +89,8 @@ class SoftmaxRegression:
         return exp_values / np.sum(exp_values)
 
     def cross_entropy(self, X, y_one_hot):
-        ce = - np.sum(np.multiply(y_one_hot, np.log(self.softmax(X))))
-        return ce / len(X)
+        ce = - np.mean(np.multiply(y_one_hot, np.log(self.softmax(X))))
+        return ce
 
     def predict(self, X):
         probs = self.softmax(X)
@@ -171,6 +176,8 @@ losses_val = []
 num_folds = 10
 num_epoch = 100
 folds = cross_fold(X, num_folds)
+targets_count = []
+preds_count = []
 for fold in range(num_folds):
     X_val = X[folds[fold]]
     y_val = y[folds[fold]]
@@ -203,9 +210,34 @@ for fold in range(num_folds):
     y_train_predict = softmax.predict(X_train_PCA)
     y_test_predict = softmax.predict(X_test_PCA)
     y_val_predict = softmax.predict(X_val_PCA)
-    print('Training Accuracy:', get_accuracy(y_train_predict.A1, y_train.A1))
-    print('Testing Accuracy:', get_accuracy(y_test_predict.A1, y_test.A1))
-    print('Validation Accuracy:', get_accuracy(y_val_predict.A1, y_val.A1))
+    # print('Training Accuracy:', get_accuracy(y_train_predict.A1, y_train.A1))
+    # print('Testing Accuracy:', get_accuracy(y_test_predict.A1, y_test.A1))
+    # print('Validation Accuracy:', get_accuracy(y_val_predict.A1, y_val.A1))
+
+    targets_count += list(y_test)
+    preds_count += list(y_test_predict)
+
+confusion_mat = np.zeros((6,6))
+print("confusion mat shape: ", confusion_mat.shape)
+print("len: ", len(targets_count))
+for i in range(len(targets_count)):
+    if targets_count[i] == preds_count[i]:
+        id = targets_count[i].A1[0]
+        confusion_mat[id][id] += 1
+    else:
+        target = targets_count[i]
+        pred = preds_count[i]
+        confusion_mat[target.A1[0]][pred.A1[0]] += 1
+
+confusion_mat = confusion_mat/len(targets_count)
+print("confusion mat: ", confusion_mat)
+print("sum: ", np.sum(confusion_mat, axis=1))
+a = np.eye(6,6)
+mmp = np.sum(confusion_mat * a)
+print("mmp: ", mmp)
+
+
+
 
 average_train_losses = [0] * len(losses_train[0])
 average_test_losses = [0] * len(losses_test[0])
@@ -213,6 +245,7 @@ average_val_losses = [0] * len(losses_val[0])
 std_train_losses = []
 std_test_losses = []
 std_val_losses = []
+
 for i in range(len(losses_train)):
     for j in range(len(losses_train[0])):
         average_train_losses[j] += losses_train[i][j]
