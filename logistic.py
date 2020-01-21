@@ -9,60 +9,69 @@ class LogisticRegression:
         pass
 
     def train_batch(self, X, X_test, X_val, y, y_test, y_val, epoch=50, learning_rate=0.1, threshold=0.5):
+        # This function is for Batch Gradient Descent
+        
+        # Pass the parameters to the class attributes  
         self.samples, self.features = X.shape
         self.threshold = threshold
         self.loss_train = []
         self.loss_test = []
         self.loss_val = []
 
+        # Add bias term to the data matrix and initialize the weights
         X = np.insert(X, 0, 1, axis=1)
         self.theta = np.zeros(self.features + 1)
 
-        for i in range(epoch):
-            probs = self.sigmoid(X.dot(self.theta))
-            print("probs shape: ", probs.shape)
-            print("targets shape: ", y.shape)
-            print("inputs shape: ", X.shape)
-            dw = (1 / self.samples) * np.dot(X.T, (probs - y))
-            print("dw shape: ", dw.shape)
-            self.theta = self.theta - learning_rate * dw
 
-            self.loss_train.append(self.cost(X, y))
-            self.loss_test.append(self.cost(X_test, y_test))
-            self.loss_val.append(self.cost(X_val, y_val))
+        # Training
+        for i in range(epoch):
+            probs = self.sigmoid(X.dot(self.theta))                 # Compute outputs of sigmoid function, this is probability
+            dw = (1 / self.samples) * np.dot(X.T, (probs - y))      # Compute the derivative of the loss funciton w.r.t. weights
+            self.theta = self.theta - learning_rate * dw            # Update the weights
+
+            self.loss_train.append(self.cost(X, y))                 # Log the losses for visualization
+            self.loss_test.append(self.cost(X_test, y_test))        # Here, we logged train loss, val loss
+            self.loss_val.append(self.cost(X_val, y_val))           # and did test as well.
 
         return self.theta, self.loss_train, self.loss_test, self.loss_val
 
     def train_stochastic(self, X, X_test, X_val, y, y_test, y_val, epoch=50, learning_rate=0.1, threshold=0.5):
+        # This function is for Stochastic Gradient Descent
+
+        # Pass the parameters to class attributes
         self.samples, self.features = X.shape
         self.threshold = threshold
         self.loss_train = []
         self.loss_test = []
         self.loss_val = []
 
+        # Add bias term to the data matrix and initialize the weights
         X = np.insert(X, 0, 1, axis=1)
         self.theta = np.random.rand(self.features + 1)
 
+        # Training and logging the losses
         for i in range(epoch):
             random_order = np.arange(self.samples)
             np.random.shuffle(random_order)
 
             for j in range(len(random_order)):
-                rand = random_order[j]
-                prob = self.sigmoid(X[rand].dot(self.theta))
-                dw = (1 / self.samples) * np.dot(X[rand].T, (prob - y[rand]))
-                self.theta = self.theta - learning_rate * dw
+                rand = random_order[j]                                          # Pick data points randomly
+                prob = self.sigmoid(X[rand].dot(self.theta))                    # Compute outputs of model
+                dw = (1 / self.samples) * np.dot(X[rand].T, (prob - y[rand]))   # Compute derivatives w.r.t. the weights
+                self.theta = self.theta - learning_rate * dw                    # Update the weights
 
-            self.loss_train.append(self.cost(X, y))
+            self.loss_train.append(self.cost(X, y))                             # Log the losses
             self.loss_test.append(self.cost(X_test, y_test))
             self.loss_val.append(self.cost(X_val, y_val))
 
         return self.theta, self.loss_train, self.loss_test, self.loss_val
 
     def sigmoid(self, x):
+        # Compute the sigmoid output
         return 1 / (1 + np.exp(-x))
 
     def cost(self, X, y):
+        # Compute the Binary Cross Entropy loss of the Logistic Regression model 
         try:
             probs = self.sigmoid(X.dot(self.theta))
         except:
@@ -73,12 +82,15 @@ class LogisticRegression:
         return cost / len(X)
 
     def predict(self, X):
+        # Make predictions based on the maximal probability
+
         X = np.insert(X, 0, 1, axis=1)  # insert column of value 1 for bias
         probs = self.sigmoid(X.dot(self.theta))
         return np.round(probs).astype(int)
 
 
 def cross_fold(X, fold_num):
+    # K_fold Cross Validation, split data into K folds
     indices = []
     num = int(len(X) / fold_num)
     for i in range(fold_num):
@@ -91,9 +103,11 @@ def cross_fold(X, fold_num):
 
 
 def PCA(X, pc_num=1):
+    # PCA, for dimensionality reduction
     average_data = np.mean(X, axis=0)
     centered_data = X - average_data
 
+    # Turk and Pentland Trick
     A_T = centered_data
     A = A_T.T
     eigenvalues, eigenvectors = np.linalg.eig(
@@ -116,17 +130,20 @@ def PCA(X, pc_num=1):
 
 
 def PCA_project(X, average_data, projector, pc_num=1):
+    # PCA mapping, dimensionality reduction
     X_PCA = np.dot(X - average_data, projector[:, 0:pc_num])
     return X_PCA
 
 
 def standardize(X):
+    # Standardize the vector, for numeric stability of computation 
     mean = np.mean(X, axis=1)[:, np.newaxis]
     std = np.std(X, axis=1)[:, np.newaxis]
     return (X - mean) / std
 
 
 def get_accuracy(y_predict, y_true):
+    # Compute the accurracy
     if len(y_predict) != len(y_true):
         return 0
 
@@ -137,6 +154,9 @@ def get_accuracy(y_predict, y_true):
     return match / len(y_predict)
 
 
+# Main part of the script
+
+# Load data from files
 data_dir = "./aligned/"
 dataset, cnt = load_data(data_dir)
 images = balanced_sampler(dataset, cnt, emotions=['happiness', 'anger'])
@@ -160,6 +180,7 @@ losses_val = []
 num_folds = 10
 num_epoch = 100
 folds = cross_fold(X, num_folds)
+# Cross Validation
 for fold in range(num_folds):
     X_val = X[folds[fold]]
     y_val = y[folds[fold]]
@@ -173,6 +194,7 @@ for fold in range(num_folds):
     X_train = X[rest_folds]
     y_train = y[rest_folds]
 
+    # PCA mapping
     X_train_PCA, average_data, projector = PCA(X_train, pc_num=10)
     X_test_PCA = PCA_project(X_test, average_data, projector, pc_num=10)
     X_val_PCA = PCA_project(X_val, average_data, projector, pc_num=10)

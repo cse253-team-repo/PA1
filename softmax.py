@@ -8,35 +8,41 @@ class SoftmaxRegression:
         pass
 
     def train_batch(self, X, X_test, X_val, y, y_test, y_val, classes, epoch=50, learning_rate=0.001):
+        # This function is for Batch Gradient Descent.
+
+        # We pass the parameters to the class attributes
         self.n_samples, self.n_features = X.shape
         self.classes = classes
         self.loss_train = []
         self.loss_test = []
         self.loss_val = []
 
+        # Initialize the weights randomly and initialize the bias term.
         self.theta = np.random.rand(self.classes, self.n_features)
         self.bias = np.zeros((1, self.classes))
         y_one_hot = self.one_hot(y)
 
+        # Training
         for i in range(epoch):
-            probs = self.softmax(X)
-            y_predict = np.argmax(probs, axis=1)[:, np.newaxis]
+            probs = self.softmax(X)                                         # Compute the probability using softmax function
+            y_predict = np.argmax(probs, axis=1)[:, np.newaxis]             # Make preduction based on the maximal probability
 
-            dw = (1 / self.n_samples) * np.dot(X.T, (probs - y_one_hot))
-            self.theta = self.theta - learning_rate * dw.T
+            dw = (1 / self.n_samples) * np.dot(X.T, (probs - y_one_hot))    # Compute the derivative w.r.t. the weights
+            self.theta = self.theta - learning_rate * dw.T                  # Update the weights
 
-            db = (1 / self.n_samples) * np.sum(probs - y_one_hot, axis=0)
-            self.bias = self.bias - learning_rate * db
+            db = (1 / self.n_samples) * np.sum(probs - y_one_hot, axis=0)   # Compute the derivative w.r.t. the bias term
+            self.bias = self.bias - learning_rate * db                      # Update the bias term
 
-            self.loss_train.append(self.cross_entropy(X, y_one_hot))
-            self.loss_test.append(self.cross_entropy(
-                X_test, self.one_hot(y_test)))
-            self.loss_val.append(self.cross_entropy(
-                X_val, self.one_hot(y_val)))
+            self.loss_train.append(self.cross_entropy(X, y_one_hot))        # Log the loss for training and validation
+            self.loss_test.append(self.cross_entropy(                       # Here, we also do test and log the loss
+                X_test, self.one_hot(y_test)))                              #
+            self.loss_val.append(self.cross_entropy(                        #
+                X_val, self.one_hot(y_val)))                                #
 
         return self.theta, self.bias, self.loss_train, self.loss_test, self.loss_val
 
     def train_stochastic(self, X, X_test, X_val, y, y_test, y_val, classes, epoch=50, learning_rate=0.1):
+        # This function is for stochastic gradient descent
         self.n_samples, self.n_features = X.shape
         self.classes = classes
         self.loss_train = []
@@ -47,16 +53,12 @@ class SoftmaxRegression:
         self.bias = np.zeros((1, self.classes))
         y_one_hot = self.one_hot(y)
 
+        # Training
         for i in range(epoch):
             random_order = np.arange(self.n_samples)
-            np.random.shuffle(random_order)
-
-            self.loss_train.append(self.cross_entropy(X, y_one_hot))
-            self.loss_test.append(self.cross_entropy(
-                X_test, self.one_hot(y_test)))
-            self.loss_val.append(self.cross_entropy(
-                X_val, self.one_hot(y_val)))
-                
+            np.random.shuffle(random_order)                                 # Pick sample randomly
+            
+            # Stochastic Gradient Descent
             for j in range(len(random_order)):
                 rand = random_order[j]
                 prob = self.softmax(X[rand])
@@ -69,35 +71,40 @@ class SoftmaxRegression:
                     np.sum(prob - y_one_hot[rand])
                 self.bias = self.bias - learning_rate * db
 
-            # self.loss_train.append(self.cross_entropy(X, y_one_hot))
-            # self.loss_test.append(self.cross_entropy(
-            #     X_test, self.one_hot(y_test)))
-            # self.loss_val.append(self.cross_entropy(
-            #     X_val, self.one_hot(y_val)))
+            self.loss_train.append(self.cross_entropy(X, y_one_hot))
+            self.loss_test.append(self.cross_entropy(
+                X_test, self.one_hot(y_test)))
+            self.loss_val.append(self.cross_entropy(
+                X_val, self.one_hot(y_val)))
 
         return self.theta, self.bias, self.loss_train, self.loss_test, self.loss_val
 
     def one_hot(self, y):
+        # One hot encoding, to help compute the loss and derivatives
         one_hot = np.zeros((len(y), self.classes))
         one_hot[np.arange(len(y)), y.T] = 1
         return one_hot
 
     def softmax(self, X):
+        # Softmax function, to return the probability
         values = np.dot(X, self.theta.T) + self.bias
         shifted_values = values - np.max(values)
         exp_values = np.exp(shifted_values)
         return exp_values / np.sum(exp_values)
 
     def cross_entropy(self, X, y_one_hot):
+        # Compute the Cross Entropy Loss
         ce = - np.mean(np.multiply(y_one_hot, np.log(self.softmax(X))))
         return ce
 
     def predict(self, X):
+        # Make predictions based on the maximal probability
         probs = self.softmax(X)
         return np.argmax(probs, axis=1)[:, np.newaxis]
 
 
 def cross_fold(X, fold_num):
+    # K_fold Cross Validation
     indices = []
     num = int(len(X) / fold_num)
     for i in range(fold_num):
@@ -110,9 +117,11 @@ def cross_fold(X, fold_num):
 
 
 def PCA(X, pc_num=1):
+    # PCA, for dimensionality reduction
     average_data = np.mean(X, axis=0)
     centered_data = X - average_data
 
+    # Turk and Pentland Trick
     A_T = centered_data
     A = A_T.T
     eigenvalues, eigenvectors = np.linalg.eig(
@@ -132,24 +141,29 @@ def PCA(X, pc_num=1):
 
 
 def PCA_project(X, average_data, projector, pc_num=1):
+    # Map the raw image data into a lower-dim space
     X_PCA = np.dot(X - average_data, projector[:, 0:pc_num])
     return X_PCA
 
 
 def standardize(X):
+    # Standardize the vector, for numeric stability of computation
     mean = np.mean(X, axis=1)[:, np.newaxis]
     std = np.std(X, axis=1)[:, np.newaxis]
     return (X - mean) / std
 
 
 def get_accuracy(y_predict, y_true):
+    # Compute the accurracy
     match = 0
     for i in range(len(y_predict)):
         if y_predict[i] == y_true[i]:
             match += 1
     return match / len(y_predict)
 
+# Main part of the script
 
+# Load data from files
 data_dir = "./aligned/"
 dataset, cnt = load_data(data_dir)
 images = balanced_sampler(dataset, cnt, emotions=[
@@ -193,6 +207,7 @@ for fold in range(num_folds):
     X_train = X[rest_folds]
     y_train = y[rest_folds]
 
+    # PCA mapping
     X_train_PCA, average_data, projector = PCA(X_train, pc_num=40)
     X_test_PCA = PCA_project(X_test, average_data, projector, pc_num=40)
     X_val_PCA = PCA_project(X_val, average_data, projector, pc_num=40)
@@ -201,6 +216,7 @@ for fold in range(num_folds):
     #X_test_PCA = standardize(X_test_PCA)
     #X_val_PCA = standardize(X_val_PCA)
 
+    # Training, Validation, Test
     softmax = SoftmaxRegression()
     theta, bias, loss_train_sto, loss_test, loss_val = softmax.train_stochastic(
         X_train_PCA, X_test_PCA, X_val_PCA, y_train, y_test, y_val, classes=6, epoch=num_epoch, learning_rate=0.1)
@@ -244,8 +260,7 @@ for fold in range(num_folds):
 # print("diag: ", diag)
 
 
-
-
+# Process loss lists for visualization
 average_train_losses_sto = [0] * len(losses_train_sto[0])
 average_train_losses_bat = [0] * len(losses_train_bat[0])
 
