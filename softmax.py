@@ -7,7 +7,7 @@ class SoftmaxRegression:
     def __init__(self):
         pass
 
-    def train_batch(self, X, X_test, X_val, y, y_test, y_val, classes, epoch=50, learning_rate=0.1):
+    def train_batch(self, X, X_test, X_val, y, y_test, y_val, classes, epoch=50, learning_rate=0.001):
         self.n_samples, self.n_features = X.shape
         self.classes = classes
         self.loss_train = []
@@ -174,7 +174,7 @@ losses_train = []
 losses_test = []
 losses_val = []
 num_folds = 10
-num_epoch = 100
+num_epoch = 50
 folds = cross_fold(X, num_folds)
 targets_count = []
 preds_count = []
@@ -254,15 +254,15 @@ for i in range(len(losses_train)):
 
 for i in range(num_epoch):
     std_train_losses.append(np.std(np.array(losses_train)[:, i]))
-    std_test_losses.append(np.std(np.array(losses_test)[:, i]))
-    std_val_losses.append(np.std(np.array(losses_val)[:, i]))
+    std_test_losses.append(np.std(np.array(losses_test)[:, i])/10)
+    std_val_losses.append(np.std(np.array(losses_val)[:, i])/10)
 
 average_train_losses = np.array(average_train_losses) / len(losses_train)
 average_test_losses = np.array(average_test_losses) / len(losses_test)
 average_val_losses = np.array(average_val_losses) / len(losses_val)
 
-plt.errorbar(list(range(len(average_train_losses))),
-             average_train_losses, yerr=std_train_losses, label='Training Error')
+# plt.errorbar(list(range(len(average_train_losses))),
+#              average_train_losses, yerr=std_train_losses, label='Training Error')
 plt.errorbar(list(range(len(average_test_losses))),
              average_test_losses, yerr=std_test_losses, label='Testing Error')
 plt.errorbar(list(range(len(average_val_losses))), average_val_losses,
