@@ -233,8 +233,8 @@ confusion_mat = confusion_mat/len(targets_count)
 print("confusion mat: ", confusion_mat)
 print("sum: ", np.sum(confusion_mat, axis=1))
 a = np.eye(6,6)
-mmp = np.sum(confusion_mat * a)
-print("mmp: ", mmp)
+diag = np.sum(confusion_mat * a)
+print("diag: ", diag)
 
 
 
