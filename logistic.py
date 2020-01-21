@@ -18,7 +18,11 @@ class LogisticRegression:
 
         for i in range(epoch):
             probs = self.sigmoid(X.dot(self.theta))
+            print("probs shape: ", probs.shape)
+            print("targets shape: ", y.shape)
+            print("inputs shape: ", X.shape)
             dw = (1 / self.samples) * np.dot(X.T, (probs - y))
+            print("dw shape: ", dw.shape)
             self.theta = self.theta - learning_rate * dw
 
         return self.theta, self.loss
@@ -116,7 +120,7 @@ def get_accuracy(y_predict, y_true):
 
 data_dir = "./aligned/"
 dataset, cnt = load_data(data_dir)
-images = balanced_sampler(dataset, cnt, emotions=['anger', 'happiness'])
+images = balanced_sampler(dataset, cnt, emotions=['fear', 'surprise'])
 
 emotion_num = 0
 X = []
@@ -147,16 +151,16 @@ for fold in range(num_folds):
     X_train = X[rest_folds]
     y_train = y[rest_folds]
 
-    X_train_PCA, average_data, projector = PCA(X_train, pc_num=20)
-    X_test_PCA = PCA_project(X_test, average_data, projector, pc_num=20)
-    X_val_PCA = PCA_project(X_val, average_data, projector, pc_num=20)
+    X_train_PCA, average_data, projector = PCA(X_train, pc_num=10)
+    X_test_PCA = PCA_project(X_test, average_data, projector, pc_num=10)
+    X_val_PCA = PCA_project(X_val, average_data, projector, pc_num=10)
 
     X_train_PCA = standardize(X_train_PCA)
     X_test_PCA = standardize(X_test_PCA)
     X_val_PCA = standardize(X_val_PCA)
 
     logistic = LogisticRegression()
-    theta, loss = logistic.train_stochastic(
+    theta, loss = logistic.train_batch(
         X_train_PCA, y_train, epoch=50, learning_rate=0.2)
 
     y_train_predict = logistic.predict(X_train_PCA)
@@ -175,5 +179,6 @@ for loss in losses:
 average_losses = np.array(average_losses) / len(losses)
 print(average_losses)
 
-# plt.plot(list(range(len(average_losses))), average_losses)
-# plt.show()
+plt.plot(list(range(len(average_losses))), average_losses)
+plt.show()
+# 

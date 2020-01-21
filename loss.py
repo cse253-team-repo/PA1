@@ -13,8 +13,9 @@ class BinaryCrossEntropyLoss():
         return loss
 
     def backward(self, inputs):
-        grad = - np.sum((self.targets * (1 - self.outputs)).reshape(-1,1) * inputs + ((1 - self.targets) * ( (-1) *self.outputs)).reshape(-1,1) * inputs, axis=0)
-        # grad = np.mean((self.targets - self.outputs).reshape(-1,1) * inputs, axis=0)
+        # grad = - np.sum((self.targets * (1 - self.outputs)).reshape(-1,1) * inputs + ((1 - self.targets) * ( (-1) *self.outputs)).reshape(-1,1) * inputs, axis=0)
+        grad = np.mean((self.targets - self.outputs).reshape(-1,1) * inputs, axis=0)
+        
         # print("grad shape ", grad.shape)
         return grad
     
