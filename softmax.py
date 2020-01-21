@@ -8,10 +8,12 @@ class SoftmaxRegression:
     def __init__(self):
         pass
 
-    def train_batch(self, X, y, classes, epoch=100, learning_rate=0.01):
+    def train_batch(self, X, X_test, X_val, y, y_test, y_val, classes, epoch=50, learning_rate=0.1):
         self.n_samples, self.n_features = X.shape
         self.classes = classes
-        self.loss = []
+        self.loss_train = []
+        self.loss_test = []
+        self.loss_val = []
 
         self.theta = np.random.rand(self.classes, self.n_features)
         self.bias = np.zeros((1, self.classes))
@@ -27,14 +29,20 @@ class SoftmaxRegression:
             db = (1 / self.n_samples) * np.sum(probs - y_one_hot, axis=0)
             self.bias = self.bias - learning_rate * db
 
-            self.loss.append(self.cross_entropy(X, y_one_hot))
+            self.loss_train.append(self.cross_entropy(X, y_one_hot))
+            self.loss_test.append(self.cross_entropy(
+                X_test, self.one_hot(y_test)))
+            self.loss_val.append(self.cross_entropy(
+                X_val, self.one_hot(y_val)))
 
-        return self.theta, self.bias, self.loss
+        return self.theta, self.bias, self.loss_train, self.loss_test, self.loss_val
 
-    def train_stochastic(self, X, y, classes, epoch=100, learning_rate=0.01):
+    def train_stochastic(self, X, X_test, X_val, y, y_test, y_val, classes, epoch=50, learning_rate=0.1):
         self.n_samples, self.n_features = X.shape
         self.classes = classes
-        self.loss = []
+        self.loss_train = []
+        self.loss_test = []
+        self.loss_val = []
 
         self.theta = np.random.rand(self.classes, self.n_features)
         self.bias = np.zeros((1, self.classes))
@@ -56,13 +64,17 @@ class SoftmaxRegression:
                     np.sum(prob - y_one_hot[rand])
                 self.bias = self.bias - learning_rate * db
 
-            self.loss.append(self.cross_entropy(X, y_one_hot))
+            self.loss_train.append(self.cross_entropy(X, y_one_hot))
+            self.loss_test.append(self.cross_entropy(
+                X_test, self.one_hot(y_test)))
+            self.loss_val.append(self.cross_entropy(
+                X_val, self.one_hot(y_val)))
 
-        return self.theta, self.bias, self.loss
+        return self.theta, self.bias, self.loss_train, self.loss_test, self.loss_val
 
     def one_hot(self, y):
-        one_hot = np.zeros((self.n_samples, self.classes))
-        one_hot[np.arange(self.n_samples), y.T] = 1
+        one_hot = np.zeros((len(y), self.classes))
+        one_hot[np.arange(len(y)), y.T] = 1
         return one_hot
 
     def softmax(self, X):
@@ -73,7 +85,7 @@ class SoftmaxRegression:
 
     def cross_entropy(self, X, y_one_hot):
         ce = - np.sum(np.multiply(y_one_hot, np.log(self.softmax(X))))
-        return ce
+        return ce / len(X)
 
     def predict(self, X):
         probs = self.softmax(X)
@@ -119,6 +131,12 @@ def PCA_project(X, average_data, projector, pc_num=1):
     return X_PCA
 
 
+def standardize(X):
+    mean = np.mean(X, axis=1)[:, np.newaxis]
+    std = np.std(X, axis=1)[:, np.newaxis]
+    return (X - mean) / std
+
+
 def get_accuracy(y_predict, y_true):
     match = 0
     for i in range(len(y_predict)):
@@ -147,8 +165,11 @@ X = np.matrix(X)[shuffle_order]
 y = np.matrix(y).T[shuffle_order]
 
 
-losses = []
+losses_train = []
+losses_test = []
+losses_val = []
 num_folds = 10
+num_epoch = 100
 folds = cross_fold(X, num_folds)
 for fold in range(num_folds):
     X_val = X[folds[fold]]
@@ -163,13 +184,21 @@ for fold in range(num_folds):
     X_train = X[rest_folds]
     y_train = y[rest_folds]
 
-    X_train_PCA, average_data, projector = PCA(X_train, pc_num=40)
-    X_test_PCA = PCA_project(X_test, average_data, projector, pc_num=40)
-    X_val_PCA = PCA_project(X_val, average_data, projector, pc_num=40)
+    X_train_PCA, average_data, projector = PCA(X_train, pc_num=20)
+    X_test_PCA = PCA_project(X_test, average_data, projector, pc_num=20)
+    X_val_PCA = PCA_project(X_val, average_data, projector, pc_num=20)
+
+    #X_train_PCA = standardize(X_train_PCA)
+    #X_test_PCA = standardize(X_test_PCA)
+    #X_val_PCA = standardize(X_val_PCA)
 
     softmax = SoftmaxRegression()
-    theta, bias, loss = softmax.train_stochastic(
-        X_train_PCA, y_train, classes=6, epoch=50, learning_rate=0.1)
+    theta, bias, loss_train, loss_test, loss_val = softmax.train_batch(
+        X_train_PCA, X_test_PCA, X_val_PCA, y_train, y_test, y_val, classes=6, epoch=num_epoch, learning_rate=0.1)
+
+    losses_train.append(loss_train)
+    losses_test.append(loss_test)
+    losses_val.append(loss_val)
 
     y_train_predict = softmax.predict(X_train_PCA)
     y_test_predict = softmax.predict(X_test_PCA)
@@ -178,15 +207,42 @@ for fold in range(num_folds):
     print('Testing Accuracy:', get_accuracy(y_test_predict.A1, y_test.A1))
     print('Validation Accuracy:', get_accuracy(y_val_predict.A1, y_val.A1))
 
-    losses.append(loss)
+average_train_losses = [0] * len(losses_train[0])
+average_test_losses = [0] * len(losses_test[0])
+average_val_losses = [0] * len(losses_val[0])
+std_train_losses = []
+std_test_losses = []
+std_val_losses = []
+for i in range(len(losses_train)):
+    for j in range(len(losses_train[0])):
+        average_train_losses[j] += losses_train[i][j]
+        average_test_losses[j] += losses_test[i][j]
+        average_val_losses[j] += losses_val[i][j]
 
-average_losses = [0] * len(losses[0])
-for loss in losses:
-    for i in range(len(loss)):
-        average_losses[i] += loss[i]
+for i in range(num_epoch):
+    std_train_losses.append(np.std(np.array(losses_train)[:, i]))
+    std_test_losses.append(np.std(np.array(losses_test)[:, i]))
+    std_val_losses.append(np.std(np.array(losses_val)[:, i]))
 
-average_losses = np.array(average_losses) / len(losses)
-print(average_losses)
+average_train_losses = np.array(average_train_losses) / len(losses_train)
+average_test_losses = np.array(average_test_losses) / len(losses_test)
+average_val_losses = np.array(average_val_losses) / len(losses_val)
 
-plt.plot(list(range(len(average_losses))), average_losses)
+plt.errorbar(list(range(len(average_train_losses))),
+             average_train_losses, yerr=std_train_losses, label='Training Error')
+plt.errorbar(list(range(len(average_test_losses))),
+             average_test_losses, yerr=std_test_losses, label='Testing Error')
+plt.errorbar(list(range(len(average_val_losses))), average_val_losses,
+             yerr=std_val_losses, label='Validation Error')
+
+# plt.plot(list(range(len(average_train_losses))),
+#         average_train_losses, label='Training Error')
+# plt.plot(list(range(len(average_test_losses))),
+#         average_test_losses, label='Testing Error')
+# plt.plot(list(range(len(average_val_losses))),
+#         average_val_losses, label='Validation Error')
+
+plt.xlabel('Epoch')
+plt.ylabel('Error')
+plt.legend()
 plt.show()
