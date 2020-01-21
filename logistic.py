@@ -20,7 +20,11 @@ class LogisticRegression:
 
         for i in range(epoch):
             probs = self.sigmoid(X.dot(self.theta))
+            print("probs shape: ", probs.shape)
+            print("targets shape: ", y.shape)
+            print("inputs shape: ", X.shape)
             dw = (1 / self.samples) * np.dot(X.T, (probs - y))
+            print("dw shape: ", dw.shape)
             self.theta = self.theta - learning_rate * dw
 
             self.loss_train.append(self.cost(X, y))
@@ -135,7 +139,11 @@ def get_accuracy(y_predict, y_true):
 
 data_dir = "./aligned/"
 dataset, cnt = load_data(data_dir)
+<<<<<<< HEAD
 images = balanced_sampler(dataset, cnt, emotions=['happiness', 'anger'])
+=======
+images = balanced_sampler(dataset, cnt, emotions=['fear', 'surprise'])
+>>>>>>> 3865af36f4527070845585d436da999dcc238d56
 
 emotion_num = 0
 X = []
@@ -178,12 +186,17 @@ for fold in range(num_folds):
     X_val_PCA = standardize(X_val_PCA)
 
     logistic = LogisticRegression()
+<<<<<<< HEAD
     theta, loss_train, loss_test, loss_val = logistic.train_stochastic(
         X_train_PCA, X_test_PCA, X_val_PCA, y_train, y_test, y_val, epoch=num_epoch, learning_rate=0.5)
 
     losses_train.append(loss_train)
     losses_test.append(loss_test)
     losses_val.append(loss_val)
+=======
+    theta, loss = logistic.train_batch(
+        X_train_PCA, y_train, epoch=50, learning_rate=0.2)
+>>>>>>> 3865af36f4527070845585d436da999dcc238d56
 
     y_train_predict = logistic.predict(X_train_PCA)
     y_test_predict = logistic.predict(X_test_PCA)
@@ -192,6 +205,7 @@ for fold in range(num_folds):
     print('Testing Accuracy:', get_accuracy(y_test_predict, y_test))
     print('Validation Accuracy:', get_accuracy(y_val_predict, y_val))
 
+<<<<<<< HEAD
 average_train_losses = [0] * len(losses_train[0])
 average_test_losses = [0] * len(losses_test[0])
 average_val_losses = [0] * len(losses_val[0])
@@ -231,3 +245,8 @@ plt.xlabel('Epoch')
 plt.ylabel('Error')
 plt.legend()
 plt.show()
+=======
+plt.plot(list(range(len(average_losses))), average_losses)
+plt.show()
+# 
+>>>>>>> 3865af36f4527070845585d436da999dcc238d56

@@ -246,3 +246,5 @@ plt.xlabel('Epoch')
 plt.ylabel('Error')
 plt.legend()
 plt.show()
+
+print(theta, bias)

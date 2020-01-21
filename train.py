@@ -29,7 +29,7 @@ def train(args):
         
         for epoch in range(args.epoch):
             for i, (inputs, targets) in enumerate(train_loader):
-                
+                print("inputs shape: ", inputs.shape)
                 outputs, predictions = classifier.forward(inputs)
                 loss = criterion.compute(outputs,targets)
                 grad = criterion.backward(inputs)

@@ -3,7 +3,7 @@ import numpy as np
 class LR_Classifier():
     def __init__(self, inputs_dim=None):
         self.Linear1 = np.random.normal(size=inputs_dim+1)
-
+        print("linear shape: ", self.Linear1.shape)
     def forward(self, x):
         # print("inputs shape: ", x.shape)
         # batch_size = x.shape[0]
