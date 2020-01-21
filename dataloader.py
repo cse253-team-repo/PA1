@@ -84,13 +84,14 @@ def display_face(img):
 
 	Returns: None
 	"""
+	print(img)
 	# Convert img to PIL Image object (if it's an ndarray)
 	if type(img) == np.ndarray:
 		print("Converting from array to PIL Image")
 		img = Image.fromarray(img)
-
+	
 	# Display the image
-	img.show()
+	img.show(vmin=0, vmax=1)
 
 
 # example on how to use it
