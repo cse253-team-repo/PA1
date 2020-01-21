@@ -184,9 +184,9 @@ for fold in range(num_folds):
     X_train = X[rest_folds]
     y_train = y[rest_folds]
 
-    X_train_PCA, average_data, projector = PCA(X_train, pc_num=20)
-    X_test_PCA = PCA_project(X_test, average_data, projector, pc_num=20)
-    X_val_PCA = PCA_project(X_val, average_data, projector, pc_num=20)
+    X_train_PCA, average_data, projector = PCA(X_train, pc_num=40)
+    X_test_PCA = PCA_project(X_test, average_data, projector, pc_num=40)
+    X_val_PCA = PCA_project(X_val, average_data, projector, pc_num=40)
 
     #X_train_PCA = standardize(X_train_PCA)
     #X_test_PCA = standardize(X_test_PCA)
@@ -247,4 +247,14 @@ plt.ylabel('Error')
 plt.legend()
 plt.show()
 
-print(theta, bias)
+eigenfaces = projector[:, 0:40] * theta.T
+for i in range(6):
+    vector = eigenfaces[:, i].A1
+
+    norm = np.linalg.norm(vector)
+    mean = np.mean(vector)
+    std = np.std(vector)
+
+    vector = (vector - np.min(vector)) / (np.max(vector) - np.min(vector))
+    vector = vector * 255
+    #display_face(vector.reshape((224, 192)))
