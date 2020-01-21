@@ -170,7 +170,9 @@ X = np.matrix(X)[shuffle_order]
 y = np.matrix(y).T[shuffle_order]
 
 
-losses_train = []
+losses_train_sto = []
+losses_train_bat = []
+
 losses_test = []
 losses_val = []
 num_folds = 10
@@ -200,10 +202,15 @@ for fold in range(num_folds):
     #X_val_PCA = standardize(X_val_PCA)
 
     softmax = SoftmaxRegression()
-    theta, bias, loss_train, loss_test, loss_val = softmax.train_stochastic(
+    theta, bias, loss_train_sto, loss_test, loss_val = softmax.train_stochastic(
         X_train_PCA, X_test_PCA, X_val_PCA, y_train, y_test, y_val, classes=6, epoch=num_epoch, learning_rate=0.1)
 
-    losses_train.append(loss_train)
+    theta, bias, loss_train_bat, loss_test, loss_val = softmax.train_batch(
+        X_train_PCA, X_test_PCA, X_val_PCA, y_train, y_test, y_val, classes=6, epoch=num_epoch, learning_rate=0.1)
+
+    losses_train_sto.append(loss_train_sto)
+    losses_train_bat.append(loss_train_bat)
+
     losses_test.append(loss_test)
     losses_val.append(loss_val)
 
@@ -239,34 +246,44 @@ for fold in range(num_folds):
 
 
 
-average_train_losses = [0] * len(losses_train[0])
-average_test_losses = [0] * len(losses_test[0])
-average_val_losses = [0] * len(losses_val[0])
-std_train_losses = []
-std_test_losses = []
-std_val_losses = []
+average_train_losses_sto = [0] * len(losses_train_sto[0])
+average_train_losses_bat = [0] * len(losses_train_bat[0])
 
-for i in range(len(losses_train)):
-    for j in range(len(losses_train[0])):
-        average_train_losses[j] += losses_train[i][j]
-        average_test_losses[j] += losses_test[i][j]
-        average_val_losses[j] += losses_val[i][j]
+# average_test_losses = [0] * len(losses_test[0])
+# average_val_losses = [0] * len(losses_val[0])
+std_train_losses_sto = []
+std_train_losses_bat = []
+# std_test_losses = []
+# std_val_losses = []
+
+for i in range(len(losses_train_bat)):
+    for j in range(len(losses_train_bat[0])):
+        average_train_losses_sto[j] += losses_train_sto[i][j]
+        average_train_losses_bat[j] += losses_train_bat[i][j]
+        # average_test_losses[j] += losses_test[i][j]
+        # average_val_losses[j] += losses_val[i][j]
 
 for i in range(num_epoch):
-    std_train_losses.append(np.std(np.array(losses_train)[:, i]))
-    std_test_losses.append(np.std(np.array(losses_test)[:, i])/10)
-    std_val_losses.append(np.std(np.array(losses_val)[:, i])/10)
+    std_train_losses_sto.append(np.std(np.array(losses_train_sto)[:, i]))
+    std_train_losses_bat.append(np.std(np.array(losses_train_bat)[:, i]))
+    
+    # std_test_losses.append(np.std(np.array(losses_test)[:, i]))
+    # std_val_losses.append(np.std(np.array(losses_val)[:, i]))
 
-average_train_losses = np.array(average_train_losses) / len(losses_train)
-average_test_losses = np.array(average_test_losses) / len(losses_test)
-average_val_losses = np.array(average_val_losses) / len(losses_val)
+average_train_losses_sto = np.array(average_train_losses_sto) / len(losses_train_sto)
+average_train_losses_bat = np.array(average_train_losses_bat) / len(losses_train_bat)
+# average_test_losses = np.array(average_test_losses) / len(losses_test)
+# average_val_losses = np.array(average_val_losses) / len(losses_val)
 
-# plt.errorbar(list(range(len(average_train_losses))),
-#              average_train_losses, yerr=std_train_losses, label='Training Error')
-plt.errorbar(list(range(len(average_test_losses))),
-             average_test_losses, yerr=std_test_losses, label='Testing Error')
-plt.errorbar(list(range(len(average_val_losses))), average_val_losses,
-             yerr=std_val_losses, label='Validation Error')
+plt.errorbar(list(range(len(average_train_losses_bat))),
+             average_train_losses_bat, yerr=std_train_losses_bat, label='Training Error Batch')
+
+plt.errorbar(list(range(len(average_train_losses_sto))),
+             average_train_losses_sto, yerr=std_train_losses_sto, label='Training Error Stochastic')
+# plt.errorbar(list(range(len(average_test_losses))),
+#              average_test_losses, yerr=std_test_losses, label='Testing Error')
+# plt.errorbar(list(range(len(average_val_losses))), average_val_losses,
+#              yerr=std_val_losses, label='Validation Error')
 
 # plt.plot(list(range(len(average_train_losses))),
 #         average_train_losses, label='Training Error')
@@ -280,14 +297,14 @@ plt.ylabel('Error')
 plt.legend()
 plt.show()
 
-eigenfaces = projector[:, 0:40] * theta.T
-for i in range(6):
-    vector = eigenfaces[:, i].A1
+# eigenfaces = projector[:, 0:40] * theta.T
+# for i in range(6):
+#     vector = eigenfaces[:, i].A1
 
-    norm = np.linalg.norm(vector)
-    mean = np.mean(vector)
-    std = np.std(vector)
+#     norm = np.linalg.norm(vector)
+#     mean = np.mean(vector)
+#     std = np.std(vector)
 
-    vector = (vector - np.min(vector)) / (np.max(vector) - np.min(vector))
-    vector = vector * 255
-    #display_face(vector.reshape((224, 192)))
+#     vector = (vector - np.min(vector)) / (np.max(vector) - np.min(vector))
+#     vector = vector * 255
+#     #display_face(vector.reshape((224, 192)))
