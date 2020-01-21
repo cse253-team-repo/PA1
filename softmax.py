@@ -200,7 +200,7 @@ for fold in range(num_folds):
     #X_val_PCA = standardize(X_val_PCA)
 
     softmax = SoftmaxRegression()
-    theta, bias, loss_train, loss_test, loss_val = softmax.train_batch(
+    theta, bias, loss_train, loss_test, loss_val = softmax.train_stochastic(
         X_train_PCA, X_test_PCA, X_val_PCA, y_train, y_test, y_val, classes=6, epoch=num_epoch, learning_rate=0.1)
 
     losses_train.append(loss_train)
@@ -217,24 +217,24 @@ for fold in range(num_folds):
     targets_count += list(y_test)
     preds_count += list(y_test_predict)
 
-confusion_mat = np.zeros((6,6))
-print("confusion mat shape: ", confusion_mat.shape)
-print("len: ", len(targets_count))
-for i in range(len(targets_count)):
-    if targets_count[i] == preds_count[i]:
-        id = targets_count[i].A1[0]
-        confusion_mat[id][id] += 1
-    else:
-        target = targets_count[i]
-        pred = preds_count[i]
-        confusion_mat[target.A1[0]][pred.A1[0]] += 1
+# confusion_mat = np.zeros((6,6))
+# print("confusion mat shape: ", confusion_mat.shape)
+# print("len: ", len(targets_count))
+# for i in range(len(targets_count)):
+#     if targets_count[i] == preds_count[i]:
+#         id = targets_count[i].A1[0]
+#         confusion_mat[id][id] += 1
+#     else:
+#         target = targets_count[i]
+#         pred = preds_count[i]
+#         confusion_mat[target.A1[0]][pred.A1[0]] += 1
 
-confusion_mat = confusion_mat/len(targets_count)
-print("confusion mat: ", confusion_mat)
-print("sum: ", np.sum(confusion_mat, axis=1))
-a = np.eye(6,6)
-diag = np.sum(confusion_mat * a)
-print("diag: ", diag)
+# confusion_mat = confusion_mat/len(targets_count)
+# print("confusion mat: ", confusion_mat)
+# print("sum: ", np.sum(confusion_mat, axis=1))
+# a = np.eye(6,6)
+# diag = np.sum(confusion_mat * a)
+# print("diag: ", diag)
 
 
 
